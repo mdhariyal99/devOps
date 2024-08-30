@@ -1,0 +1,294 @@
+Ansible Fundamentals
+-------------------
+https://lex.infosysapps.com/web/en/app/toc/lex_auth_0131043992007966721195/overview ==> Course
+https://lex.infosysapps.com/web/en/app/toc/lex_auth_013031193845923840157/overview ==> Playground
+https://lex.infosysapps.com/web/en/app/toc/lex_auth_0131298255435120642384/overview ==> Internal Certification
+
+Basic Unix Commands --> ls, vi, pwd, cd, touch, cat 
+Linux administration ==> user add, package install, starting service
+
+Automation
+==========
+Reduce the human effort 
+
+Control server must be a Linux system
+Target nodes can be of any OS (Windows/Linux)
+
+Ansible is written on top of Python
+
+WIndows target nodes, winrm 
+
+Agentless configuration - On the target nodes, no software required. Only on COntrol server, ANsible software is installed. 
+
+Push based mechanism - The configuration is pushed from the control server. 
+When you want to do admin level tasks, you require sudo privileges
+
+Steps to do tasks in target nodes
+--------------------------------
+
+1. Install Ansible on control server
+2. We will create a user(ansuser) and set password for that user. You have to add the user to sudo users. This user will get the same rights as admin user( root user)
+3. We will enable the remote connection without password to all target nodes. Using SSH passwordless login the remote connection will be enabled from control server to target nodes. 
+ From user ansuser in control server to user ansuser in target  nodes should happen without password
+4. Ansible  has to identify the target nodes. Ansible inventory - which holds info about your target nodes.
+5. Using the adhoc commands / playbooks , finish the tasks on target nodes.
+
+
+Ansible Inventory
+-------------------
+/etc/ansible/hosts
+/etc/ansible/ansible.cfg
+
+[grp]
+webnode1
+dbnode1
+[grp1:children]
+grp
+
+
+dbnode[1:100].cis.com
+
+dbnode1.cis.com, dbnode2.cis.com, -----, dbnode100.cis.com
+
+ping 
+user
+apt
+
+ansible-doc -l
+ansible-doc -s ping
+ansible-doc -s user
+
+Adhoc
+---------
+ansible <host_pattern> -m <module_name> -a 'arg1=value1 arg2=value2' --become
+all ==> all target nodes in inv
+grp  ==> the members of group will be selected for the specific task
+
+YAML
+==========
+Playbooks uses yaml
+
+key: value
+key1:
+    - value1:
+    - valeu2:
+    - value3:
+
+key:
+    - value1: 
+      sub_key1: sub_value1
+      sub_key2: sub_value2
+    - value2: 
+      sub_key1: sub_value1
+      sub_key2: sub_value2
+    
+contains play
+
+
+ansible all -m ping 
+ansible all -m user -a 'name=asnuser state=present'
+
+ansible-playbook play1.yaml --syntax-check
+ansible-playbook play1.yaml
+
+
+1.Create a group "servers" in the default inventory file with valid datanodes. 
+2.Check the connectivity of target nodes using the host patterns given in the inventory
+3.Using adhoc command, create a user "user1" on datanode1 only
+4.Using appropriate module, install "nano" package and "nginx" package using playbook. These tasks to be done on datanode2
+
+Ansible Facts
+-------------
+At the time of command execution, the information about the target nodes are collected. This data /info is called as facts. 
+
+facts variables are used for storing the data collected
+
+Nested
+--------
+
+i = 1, 2,3
+j=1,2,3,4
+
+When I=1 ==> j=1, then j=2, j=3, j=4
+i=2, j=1, j==2, j=3, j=4
+i=3 , j=1, j=2, j=3, j=4
+
+
+5.Create a playbook which create users 'Alex', 'Manoj', 'Netra' and 'Feena' (using loops)on  target nodes if target node's os_family is Debian.
+
+6.Create another playbook which will create the groups 'ICP' and 'GEC' and add the following users to both groups.
+User1, User2, User3
+These user names needs to be accessed using variables. You can do it either via vars or vars_files option.
+
+7.Create one more playbook, in which we can use the variable for the 'hosts' keyword as well. Use the command line variable option to define the variables. This playbook should install the package 'chrony'. If the installation is done, it should print the message that, "Successfully installed chrony". Use variable for the value 'chrony' .
+
+Loops
+---------
+loop , with_items, with_file, with_nested
+
+{{ item }}
+with_items:
+  - value1
+  - value2
+
+- { key1: value1, key2: value2}
+- { key1: va;ue1, key2: value2}
+
+with_nested:
+  - [value1, valu2, value3 ]
+  - [ innervalue1, innervalue2]
+
+Variables
+---------
+
+vars:
+   var1: value
+   var2: value
+"{{var1}}"
+
+vars_files:
+   - variablefile
+
+hosts: "{{node}}"
+
+
+
+ansble-playbook --extra-vars "node=datanode1"
+
+
+Ansible Handlers
+------------------
+If one task make changes on target node, another task should be executed.
+If one task is just showing "OK"  --> that another task should not be executed
+
+Vault
+
+-----
+ansible-playbook \
+> --vault-id one@prompt --vault-id two@prompt site.yml
+Vault password (one):
+Vault password (two):
+
+1. Create a file "test.j2" (any fact variable can be used inside the file) in /root. Use the template module to copy this file to the destination '/tmp/test.txt'. Ensure that a print message is displayed in the screen if the template module makes a change in the target node. 
+
+2. Create a script "script1.sh" (any valid unix commands can be written inside). This script needs to be executed on target nodes if the target node is Ubuntu version 16.04. Create the playbook to do the script execution and after script execution, it should copy the script1.sh to the /tmp on target nodes. DO the necessary action so that copy task can be selected for execution if required.
+
+3. Create a playbook with printing message on screen. Ensure that this playbook is protected with password. 
+
+
+We will discuss the questions after 3:15PM
+
+
+Is there any way to recover the password in vault ?
+
+Template
+--------
+Copy and paste the dynamic content
+
+Tags
+----
+
+--tags for selecting
+--skip-tags for excluding
+
+always --> this task will be executed even if you select other tags for execution
+
+Handlers
+---------
+
+If one task does a change on your target node should trigger another task , then we will use handlers
+force_handlers --> ensures that if handler is notified , but the subsequent task fails in playbook, still handler will be executed.
+
+Vault
+---------
+ansible-vault 
+
+create
+encrypt
+edit
+view
+decrypt
+
+Roles
+-----
+
+copy files, template , variables, handlers
+
+vars:
+
+play1.yaml ==> /etc/ansible
+fiel1 ==> /etc/ansible
+index.j2 ==> /etc/ansible
+
+handlers:
+asjkf
+sjafk
+
+roles ==> 
+
+Strategy
+--------
+linear ==> 1st task done on intended target nodes, then go to 2nd task on all nodes, completion(fail,ok, changed) ==> of one task is needed from all nodes to start the next execution.
+
+free - target ndoes executes the task independent of each other
+
+serial: 4
+
+hosts: grp1 (20 target nodes) ==> 5
+
+
+Error handling
+-----------------
+Kindly solve the questions below. We will discuss these at 3:15PM
+If any doubts are there, please use the Webex chat box, I will reply there. 
+
+Q1. Create a role dhcp_data . The main tasks are
+1. Install  "isc-dhcp-server" package
+2. copying a file "dynamic.txt" to /etc
+If package install is successful and task does a change on target node, a print task needs to be executed.
+
+Use this role in a playbook "play1.yaml"
+
+Q2. Create a playbook , which creates the following users and add them to the groups as mentioned.
+
+User1 - add to grp1
+User2 - add to grp2
+User3 - add to grp1
+Use loop concept to do this task.
+add necessary tasks for the above requirement.
+
+Ensure that any of the tasks throws error at time of execution, this needs to be ignored by the playbook execution.
+
+
+block --> write the code which may result in error.
+rescue ==> write the code which needs to be executed if any error happens in "block code"
+always --> This code will get executed evenif "block" do not have any error. 
+
+service:
+    name: vsftpd
+    state: started
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
